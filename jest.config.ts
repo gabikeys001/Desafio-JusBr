@@ -4,7 +4,7 @@ export default {
   collectCoverage: true,
   coverageDirectory: "coverage",
   coverageProvider: "v8",
-  testMatch: ["*/_tests_//.[jt]s?(x)", "*/?(.)+(spec|test).[tj]s?(x)"],
+  testMatch: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[tj]s?(x)"],
   testEnvironment: "node",
   transform: {
     "^.+\\.ts?$": "ts-jest",
