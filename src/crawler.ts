@@ -2,9 +2,15 @@ import puppeteer from "puppeteer";
 import { Movimentacao, Processo } from "./models/Processo";
 import { TJAL_URL, TJCE_URL, tribunalUrls } from "./utils/urls";
 
+
+
+
 async function buscarProcesso(numeroProcesso: string): Promise<Processo> {
+ 
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
+
+
 
   let url: string;
 
@@ -21,7 +27,65 @@ async function buscarProcesso(numeroProcesso: string): Promise<Processo> {
   if (numeroProcesso.includes(".0000.")) {
     const tribunalUrl = tribunalUrls[url];
 
+    try {
+      await page.goto(url);
+    } catch (error) {
+      console.error(`Erro ao acessar a URL ${url}: ${error}`);
+      await browser.close();
+      throw new Error(`Erro ao acessar a URL ${url}`);
+    }
+    
+    async function buscarProcesso(numeroProcesso: string) {
+      const browser = await puppeteer.launch();
+      const page = await browser.newPage();
+    
+     
+  
+      // Preencher o número do processo no campo de busca e clicar no botão de busca
+      await page.type("#numeroDigitoAnoUnificado", numeroProcesso);
+      await page.click("#pbEnviar");
+    
+      // Esperar pelo resultado da busca
+      await page.waitForSelector("#tableDadosProcesso");
+    
+      // Extrair os dados do processo
+      const dadosProcesso = await page.evaluate(() => {
+        const numeroProcesso = document.querySelector("#numeroProcesso").textContent.trim();
+        const dataDistribuicao = document.querySelector("#dataDistribuicao").textContent.trim();
+        const orgaoJulgador = document.querySelector("#orgaoJulgador").textContent.trim();
+        const valorCausa = document.querySelector("#valorCausa").textContent.trim();
+        const status = document.querySelector("#status").textContent.trim();
+    
+        return { numeroProcesso, dataDistribuicao, orgaoJulgador, valorCausa, status };
+      });
+    
+      // Extrair as movimentações do processo
+      const movimentacoes = await page.evaluate(() => {
+        const movimentacoesNodes = document.querySelectorAll(".movimentacao");
+        const movimentacoes = [];
+    
+        movimentacoesNodes.forEach((node) => {
+          const data = node.querySelector(".dataMovimentacao").textContent.trim();
+          const descricao = node.querySelector(".descricao").textContent.trim();
+    
+          movimentacoes.push({ data, descricao });
+        });
+    
+        return movimentacoes;
+      });
+    
+      await browser.close();
+    
+      return { dadosProcesso, movimentacoes };
+    }
+    
     // Se for de segundo grau, adiciona a URL correspondente
+    try {
+      await page.goto(url);
+    } catch (err) {
+      throw new Error(`Erro ao acessar a página ${url}: ${err.message}`);
+    }
+    
     if (tribunalUrl) {
       url = url.replace("cpopg/show.do", tribunalUrl);
     }
@@ -33,7 +97,19 @@ async function buscarProcesso(numeroProcesso: string): Promise<Processo> {
 
   if (botaoMais) {
     await botaoMais.click();
-
+    try {
+      const tabelaMovimentacoes = document.querySelector(
+        "#tabelaTodasMovimentacoes"
+      );
+      if (!tabelaMovimentacoes) {
+        throw new Error("Tabela de movimentações não encontrada");
+      }
+    } catch (error) {
+      console.error(`Erro ao buscar movimentações: ${error}`);
+      await browser.close();
+      throw new Error(`Erro ao buscar movimentações`);
+    }
+    
     // Esperar meio segundo para que as movimentações sejam carregadas
     await new Promise((res) => setTimeout(res, 500));
   }
