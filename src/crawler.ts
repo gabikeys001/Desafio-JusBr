@@ -1,6 +1,11 @@
 import puppeteer from "puppeteer";
 import { Movimentacao, Processo } from "./models/Processo";
 import { TJAL_URL, TJCE_URL, tribunalUrls } from "./utils/urls";
+import jsdom from 'jsdom';
+const { JSDOM } = jsdom;
+const dom = new JSDOM();
+(global as any).document = dom.window.document;
+
 
 
 

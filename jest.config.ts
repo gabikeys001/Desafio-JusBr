@@ -11,3 +11,10 @@ export default {
   },
   transformIgnorePatterns: ["node_modules"],
 };
+
+module.exports = {
+  "transform": {
+    "^.+\\.tsx?$": "ts-jest",
+    "^.+\\.jsx?$": "babel-jest"
+  },
+}
